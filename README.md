@@ -7,9 +7,9 @@ If your application uses the Prometheus Java Client library, you will see your P
 Internally, the Prometheus Java Client library maintains a `CollectorRegistry` that keeps references to all metrics.
 In order to find your metrics, Instana needs to find your `CollectorRegistry` instance.
 
-If you use the Prometheus Java Client library's *default registry* you're good: Instana will discover the *default registry* automatically.
+If you use the Prometheus Java Client library's **default registry** you're good: Instana will discover the default registry automatically.
 
-If you use a custom registry, you will need to include this little project here to give Instana a hint where to find your custom registry.
+If you use a **custom registry**, you will need to include the `prometheus-java-library-integration` and explicitly include your custom registry for Instana monitoring.
 
 Background: Default Registry vs. Custom Registry
 ------------------------------------------------
@@ -27,7 +27,7 @@ Counter.build()
     .register();           // <-- registers your metric with the default CollectorRegistry
 ```
 
-If you use the default registry, you don't need to do anything. Instana will detect the default registry automatically.
+If you use the default registry, you don't need to do anything. **Instana will detect the default registry automatically.**
 
 ### Option 2: Custom registry
 
@@ -60,10 +60,24 @@ In order to integrate your custom `CollectorRegistry` with Instana, you first ne
 Then, you need to call the following once at some point during your application initialization:
 
 ```java
-Instana.add(registry);
+CollectorRegistry registry = ...;
+
+Instana.include(registry);
 ```
 
 That's it, now Instana will find your registry.
+
+Preventing Automatic Monitoring of the Default Registry
+-------------------------------------------------------
+
+As mentioned above, the Prometheus Java Client library provides a `defaultRegistry`, and Instana will detect and monitor that `defaultRegistry` automatically.
+In order to prevent Instana from monitoring the `defaultRegistry`, call:
+
+```java
+Instana.exclude(CollectorRegistry.defaultRegistry);
+```
+
+If you call `include()` and `excude()` for the same `CollectorRegistry` instance, `exclude()` wins and the registry will not be monitored.
 
 Integration with Micrometer's Prometheus Meter Registry
 -------------------------------------------------------
@@ -77,7 +91,7 @@ However, if you want to see Prometheus metrics in exactly the same format and se
 
 ### Example 1: Spring Boot with the Micrometer Prometheus Registry
 
-Step 0: Add the `prometheus-java-library-integration` as a dependency:
+**Step 0:** Add the `prometheus-java-library-integration` as a dependency:
 
 ```xml
 <dependency>
@@ -87,7 +101,7 @@ Step 0: Add the `prometheus-java-library-integration` as a dependency:
 </dependency>
 ```
 
-Step 1: Change the scope of the `micrometer-registry-prometheus` dependency:
+**Step 1:** Change the scope of the `micrometer-registry-prometheus` dependency:
 
 If you use Spring Boot with the Micrometer Prometheus registry, you already have the following dependency in your `pom.xml`:
 
@@ -108,7 +122,7 @@ You have to remove the `runtime` scope to make this dependency available at comp
 </dependency>
 ```
 
-Step 2: Initialize the Instana integration:
+**Step 2:** Initialize the Instana integration:
 
 Spring Boot will provide a `PrometheusMeterRegistry` object via dependency injection. Use this to initialize the Instana integration:
 
@@ -131,7 +145,7 @@ public class InstanaInitializer {
 
 ### Example 2: Quarkus with the Micrometer Prometheus Registry
 
-Step 0: Add the `prometheus-java-library-integration` as a dependency:
+**Step 0:** Add the `prometheus-java-library-integration` as a dependency:
 
 ```xml
 <dependency>
@@ -141,7 +155,7 @@ Step 0: Add the `prometheus-java-library-integration` as a dependency:
 </dependency>
 ```
 
-Step 1: Initialize the Instana integration
+**Step 1:** Initialize the Instana integration
 
 Just like Spring Boot, Quarkus provides Micrometer's `PrometheusMeterRegistry` via dependency injection.
 Use this registry to initialize Instana:
