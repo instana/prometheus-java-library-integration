@@ -1,6 +1,6 @@
 /*
  * (c) Copyright IBM Corp. 2021
- * (c) Copyright Instana Inc.
+ * (c) Copyright Instana Inc. 2021
  */
 package com.instana.prometheus;
 
@@ -32,10 +32,10 @@ public class Instana {
 
     /**
      * Register a custom {@link CollectorRegistry} for Instana monitoring.
-     * <p/>
+     * <p>
      * You don't need to call this for the {@link CollectorRegistry#defaultRegistry defaultRegistry},
      * as Instana discovers the {@link CollectorRegistry#defaultRegistry defaultRegistry} automatically.
-     * <p/>
+     * <p>
      * If you call {@link #include(CollectorRegistry) include()} and {@link #exclude(CollectorRegistry) exclude()}
      * for the same registry, {@link #exclude(CollectorRegistry) exclude()} wins and the registry will not
      * be monitored.
@@ -47,7 +47,7 @@ public class Instana {
 
     /**
      * Exclude a {@link CollectorRegistry} from being monitored by Instana.
-     * <p/>
+     * <p>
      * Instana monitors the {@link CollectorRegistry#defaultRegistry defaultRegistry} automatically.
      * To prevent this, call
      * <pre>

@@ -1,0 +1,94 @@
+# Concourse CI pipeline
+---
+pipeline-vars: &pipeline-vars
+  instanacd-github-api-token: ((instanacd-github-api-token))
+  team-java-sign-key: ((team-java-sign-key))
+  team-java-sign-password: ((team-java-sign-password))
+  team-java-sonatype: ((team-java-sonatype))
+
+mvn-params: &mvn-params
+  TEAM_JAVA_SIGN_KEY: ((team-java-sign-key))
+  TEAM_JAVA_SIGN_PASSWORD: ((team-java-sign-password))
+  SONATYPE_USER: ((team-java-sonatype.username))
+  SONATYPE_PASSWORD: ((team-java-sonatype.password))
+
+git-repository: &git-repo-config
+  uri: https://github.com/instana/prometheus-java-library-integration.git
+  username: ((instanacd-github-api-token))
+  password: x-oauth-basic
+  branch: main
+
+resources:
+  - name: source
+    type: git
+    icon: github
+    source:
+      <<: *git-repo-config
+
+jobs:
+  - name: self-update
+    plan:
+      - get: source
+        trigger: true
+      - set_pipeline: self
+        file: source/ci/release.yaml
+        vars:
+          <<: *pipeline-vars
+
+  # Release must be triggered manually
+  - name: release
+    plan:
+      - get: source
+        passed: [ self-update ]
+      - task: release
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: openjdk
+              tag: 11-jdk
+          inputs:
+            - name: source
+          params:
+            <<: *mvn-params
+          run:
+            dir: source
+            path: /bin/bash
+            args:
+              - "-c"
+              - |
+                set -euf -o pipefail
+                # We don't use "set -x" to prevent secrets from being logged to the console.
+                echo "================================"
+                echo "Configuring Git"
+                echo "================================"
+                GIT_USER_NAME="$(git log -1 --format='%aN')"
+                GIT_USER_EMAIL="$(git log -1 --format='%ae')"
+                echo "Git user: $GIT_USER_NAME <$GIT_USER_EMAIL>"
+                git config --global user.name "$GIT_USER_NAME"
+                git config --global user.email "$GIT_USER_EMAIL"
+                echo "================================"
+                echo "Importing the GPG sign key"
+                echo "================================"
+                echo "${TEAM_JAVA_SIGN_PASSWORD}" > pass.txt
+                echo "${TEAM_JAVA_SIGN_KEY}" > sign.key
+                gpg --batch --passphrase-file pass.txt --import sign.key
+                echo "================================"
+                echo "./mvnw release:prepare"
+                echo "================================"
+                ./mvnw --batch-mode -Darguments=-Dgpg.passphrase="${TEAM_JAVA_SIGN_PASSWORD}" -DpushChanges=false -s ci/settings.xml release:prepare
+                echo "================================"
+                echo "./mvnw release:perform"
+                echo "================================"
+                ./mvnw --batch-mode -s ci/settings.xml release:perform -DlocalCheckout=true
+                echo "================================"
+                echo "Creating copy"
+                echo "================================"
+                cd ..
+                cp -a source source-with-release-commits/
+          outputs:
+            - name: source-with-release-commits
+      - put: source
+        params:
+          repository: source-with-release-commits/source
