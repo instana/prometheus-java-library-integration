@@ -4,7 +4,7 @@
 
     <groupId>com.instana</groupId>
     <artifactId>prometheus-java-library-integration</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
 
     <name>Instana - Prometheus Java Library Integration</name>
     <url>https://github.com/instana/prometheus-java-library-integration</url>
@@ -16,7 +16,7 @@
         <connection>scm:git:git://github.com/instana/prometheus-java-library-integration.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/instana/prometheus-java-library-integration.git</developerConnection>
         <url>https://github.com/instana/prometheus-java-library-integration</url>
-        <tag>HEAD</tag>
+        <tag>v1.0.0</tag>
     </scm>
 
     <properties>
